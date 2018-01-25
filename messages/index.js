@@ -78,9 +78,15 @@ var bot = new builder.UniversalBot(connector);
 //   .triggerAction({
 //     matches: 'Greeting'
 //   });
+// https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/160b0864-1ba8-4aee-a337-b8c77695fc9f?subscription-key=19d29a12d3fc4d9084146b466638e62a&verbose=true&timezoneOffset=0&q=
+let luisModelUrl = `https://${process.env['LuisAPIHostName']}/luis/v2.0/apps/${
+  process.env['LuisAppId']
+}?subscription-key=${process.env['LuisAPIKey']}`;
+
+console.log(luisModelUrl);
 
 // Main dialog with LUIS
-const recognizer = new builder.LuisRecognizer(process.env['LuisModelUrl']);
+const recognizer = new builder.LuisRecognizer(luisModelUrl);
 const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   .matches('Greeting', session => {
     session.send('Sup, yo!');
