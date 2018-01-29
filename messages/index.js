@@ -17,13 +17,14 @@ let luisModelUrl = `https://${process.env['LuisAPIHostName']}/luis/v2.0/apps/${
   process.env['LuisAppId']
 }?subscription-key=${process.env['LuisAPIKey']}`;
 
-console.log(luisModelUrl);
-
 // Main dialog with LUIS
 const recognizer = new builder.LuisRecognizer(luisModelUrl);
 const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   .matches('Greeting', session => {
     session.send('Sup, yo!');
+  })
+  .matches('Thank You', session => {
+    session.send('No problem! Glad I could help.');
   })
   .matches('Help', session => {
     session.send(
@@ -49,6 +50,7 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
 
     // got both location and light state, move on to the next step
     if (location && lightState) {
+      // we call Vera
       controlLights(session, location.entity, lightState.entity);
     }
 
