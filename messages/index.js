@@ -1,21 +1,26 @@
-var builder = require('botbuilder');
+const builder = require('botbuilder');
+const botbuilder_azure = require('botbuilder-azure');
+const LIFX = require('lifx-http-api');
+
 require('dotenv').config();
-var botbuilder_azure = require('botbuilder-azure');
-// var Vera = require('./Vera');
 
-// const vera = new Vera();
+const client = new LIFX({
+  bearerToken: process.env.LIFX_TOKEN
+});
 
-var connector = new botbuilder_azure.BotServiceConnector({
+const connector = new botbuilder_azure.BotServiceConnector({
   appId: process.env['MicrosoftAppId'],
   appPassword: process.env['MicrosoftAppPassword'],
   openIdMetadata: process.env['BotOpenIdMetadata']
 });
 
-var bot = new builder.UniversalBot(connector);
+const bot = new builder.UniversalBot(connector);
 
-let luisModelUrl = `https://${process.env['LuisAPIHostName']}/luis/v2.0/apps/${
-  process.env['LuisAppId']
-}?subscription-key=${process.env['LuisAPIKey']}`;
+const luisModelUrl = `https://${
+  process.env['LuisAPIHostName']
+}/luis/v2.0/apps/${process.env['LuisAppId']}?subscription-key=${
+  process.env['LuisAPIKey']
+}`;
 
 // Main dialog with LUIS
 const recognizer = new builder.LuisRecognizer(luisModelUrl);
@@ -28,36 +33,36 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   })
   .matches('Help', session => {
     session.send(
-      'I can control the lights in your house. You can say things like, "Turn the kitchen lights on".'
+      'I can control your LIFX lightbulb. You can say things like "Turn the light on and set it to blue".'
     );
   })
   .matches('Cancel', session => {
     session.send('OK. Canceled.');
     session.endDialog();
   })
-  .matches('Control Lights', (session, args) => {
-    session.send('OK! One sec...');
+  .matches('SetState', (session, args) => {
+    session.send('One sec...');
 
-    var location = builder.EntityRecognizer.findEntity(
+    var colorEntity = builder.EntityRecognizer.findEntity(
       args.entities,
-      'Location'
+      'Color'
     );
-
-    var lightState = builder.EntityRecognizer.findEntity(
+    var powerEntity = builder.EntityRecognizer.findEntity(
       args.entities,
-      'Light State'
+      'Power'
     );
 
     // got both location and light state, move on to the next step
-    if (location && lightState) {
-      // we call Vera
-      controlLights(session, location.entity, lightState.entity);
-    }
-
-    // got a location, but no light state
-    if (!location || !lightState) {
+    if (colorEntity || powerEntity) {
+      let options = {
+        power: powerEntity ? powerEntity.entity : undefined,
+        color: colorEntity ? colorEntity.entity : undefined
+      };
+      setState(session, options);
+    } else {
+      // No entities were matched
       session.send(
-        `I need to know which room and if you want the lights on or off. You can say things like, "Turn on/off the kitchen lights".`
+        `I dind't understand that. You can ask me to turn the light on/off or change the color.`
       );
     }
   })
@@ -65,11 +70,28 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
     session.send("Sorry, I did not understand '%s'.", session.message.text);
   });
 
-bot.dialog('/', intents);
+bot.dialog('/', session => {
+  session.send('Welcome to the LIFX Bot!');
+  session.beginDialog('/control');
+});
 
-function controlLights(session, location, lightState) {
-  session.send(`${location} lights are ${lightState}`);
-  session.endDialog();
+bot.dialog('/control', intents);
+
+bot.on('conversationUpdate', message => {
+  if (message.membersAdded) {
+    message.membersAdded.forEach(identity => {
+      if (identity.id === message.address.bot.id) {
+        bot.beginDialog(message.address, '/');
+      }
+    });
+  }
+});
+
+/* Light Functions */
+function setState(session, options) {
+  client.setState('all', options).then(() => {
+    session.send(`${JSON.stringify(options)}`);
+  });
 }
 
 module.exports = connector.listen();

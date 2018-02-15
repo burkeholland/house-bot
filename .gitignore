@@ -25,3 +25,5 @@ appsettings.json
 local.settings.json
 
 node_modules
+
+.env
