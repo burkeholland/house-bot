@@ -26,3 +26,5 @@ local.settings.json
 node_modules
 
 .env
+
+demo

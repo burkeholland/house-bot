@@ -55,7 +55,7 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
     // if we have a color or power value, make sure there is no whitespace
     if (colorEntity || powerEntity) {
       let options = {
-        power: powerEntity ? powerEntity.entityreplace(/ /g, '') : undefined,
+        power: powerEntity ? powerEntity.entity.replace(/ /g, '') : undefined,
         color: colorEntity ? colorEntity.entity.replace(/ /g, '') : undefined
       };
       setState(session, options);
