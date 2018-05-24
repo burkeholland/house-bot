@@ -52,11 +52,11 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
       'Power'
     );
 
-    // got both location and light state, move on to the next step
+    // if we have a color or power value, make sure there is no whitespace
     if (colorEntity || powerEntity) {
       let options = {
-        power: powerEntity ? powerEntity.entity : undefined,
-        color: colorEntity ? colorEntity.entity : undefined
+        power: powerEntity ? powerEntity.entityreplace(/ /g, '') : undefined,
+        color: colorEntity ? colorEntity.entity.replace(/ /g, '') : undefined
       };
       setState(session, options);
     } else {
@@ -70,22 +70,7 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
     session.send("Sorry, I did not understand '%s'.", session.message.text);
   });
 
-bot.dialog('/', session => {
-  session.send('Welcome to the LIFX Bot!');
-  session.beginDialog('/control');
-});
-
-bot.dialog('/control', intents);
-
-bot.on('conversationUpdate', message => {
-  if (message.membersAdded) {
-    message.membersAdded.forEach(identity => {
-      if (identity.id === message.address.bot.id) {
-        bot.beginDialog(message.address, '/');
-      }
-    });
-  }
-});
+bot.dialog('/', intents);
 
 /* Light Functions */
 function setState(session, options) {
