@@ -4,6 +4,8 @@ const LIFX = require('lifx-http-api');
 
 require('dotenv').config();
 
+const FRIENDLY_ERROR = 'No dice. An error was returned by the LIFX API.';
+
 const client = new LIFX({
   bearerToken: process.env.LIFX_TOKEN
 });
@@ -26,43 +28,67 @@ const luisModelUrl = `https://${
 const recognizer = new builder.LuisRecognizer(luisModelUrl);
 const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   .matches('Greeting', session => {
-    session.send('Sup, yo!');
+    session.send(
+      `Hi there. I'm the Lamp Bot. Built by Burke - the smartest human in the world. 🧠`
+    );
   })
   .matches('Thank You', session => {
-    session.send('No problem! Glad I could help.');
+    session.send(
+      'My pleasure. Burke built me and he is incredibly smart so really you should be thanking him.'
+    );
   })
   .matches('Help', session => {
     session.send(
-      'I can control your LIFX lightbulb. You can say things like "Turn the light on and set it to blue".'
+      'I can control your LIFX lightbulb. You can say things like "Turn the light on" or "set it to blue".'
     );
   })
   .matches('Cancel', session => {
     session.send('OK. Canceled.');
     session.endDialog();
   })
-  .matches('SetState', (session, args) => {
-    session.send('One sec...');
+  .matches('Power', (session, args) => {
+    var power = builder.EntityRecognizer.findEntity(args.entities, 'Power');
 
-    var colorEntity = builder.EntityRecognizer.findEntity(
+    let options = { power: power.entity };
+    setState(options)
+      .then(result => {
+        session.send(`OK. The lamp is ${power.entity}.`);
+      })
+      .catch(err => {
+        session.send(err);
+      });
+  })
+  .matches('Color', (session, args) => {
+    let namedColor = builder.EntityRecognizer.findEntity(
       args.entities,
-      'Color'
-    );
-    var powerEntity = builder.EntityRecognizer.findEntity(
-      args.entities,
-      'Power'
+      'Color:Named'
     );
 
-    // if we have a color or power value, make sure there is no whitespace
-    if (colorEntity || powerEntity) {
-      let options = {
-        power: powerEntity ? powerEntity.entity.replace(/ /g, '') : undefined,
-        color: colorEntity ? colorEntity.entity.replace(/ /g, '') : undefined
-      };
-      setState(session, options);
+    let hexColor = builder.EntityRecognizer.findEntity(
+      args.entities,
+      'Color:Hex'
+    );
+
+    let options = {};
+
+    if (namedColor || hexColor) {
+      if (namedColor) {
+        options.color = namedColor.entity;
+      }
+      if (hexColor) {
+        options.color = hexColor.entity;
+      }
+
+      setState(options)
+        .then(result => {
+          session.send(`OK. Lamp color is now ${options.color}.`);
+        })
+        .catch(err => {
+          session.send(err);
+        });
     } else {
-      // No entities were matched
       session.send(
-        `I dind't understand that. You can ask me to turn the light on/off or change the color.`
+        `I think you want to change the color of the lamp, but I couldn't figure out which color you want to change it to. Please try again?`
       );
     }
   })
@@ -72,11 +98,9 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
 
 bot.dialog('/', intents);
 
-/* Light Functions */
-function setState(session, options) {
-  client.setState('all', options).then(() => {
-    session.send(`${JSON.stringify(options)}`);
-  });
+/* Color Change Function */
+function setState(options) {
+  return client.setState('all', options);
 }
 
 module.exports = connector.listen();
