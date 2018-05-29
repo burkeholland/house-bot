@@ -4,8 +4,6 @@ const LIFX = require('lifx-http-api');
 
 require('dotenv').config();
 
-const FRIENDLY_ERROR = 'No dice. An error was returned by the LIFX API.';
-
 const client = new LIFX({
   bearerToken: process.env.LIFX_TOKEN
 });
@@ -49,10 +47,10 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   .matches('Power', (session, args) => {
     var power = builder.EntityRecognizer.findEntity(args.entities, 'Power');
 
-    let options = { power: power.entity };
+    let options = { power: power.resolution.values[0] };
     setState(options)
       .then(result => {
-        session.send(`OK. The lamp is ${power.entity}.`);
+        session.send(`OK. The lamp is ${options.power}.`);
       })
       .catch(err => {
         session.send(err);
