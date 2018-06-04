@@ -18,6 +18,12 @@ module.exports = {
       `No problem! 👍`,
       `"You got it, dude" 
       - An Olson Twin. Full House.`
+    ],
+    ColdStart: [
+      `Patience is a virtue.`,
+      `Good things take time.`,
+      `It's not a race. You can wait 5 seconds.`,
+      `Relax. Nobody ever died from a cold start.`
     ]
   },
 
