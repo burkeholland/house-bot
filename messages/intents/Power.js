@@ -11,11 +11,11 @@ class Power extends Intent {
     let options = { power: power.resolution.values[0] };
     lifx
       .setState(options)
-      .then(result => {
+      .then(() => {
         this.session.send(`OK. The lamp is ${options.power}.`);
       })
       .catch(err => {
-        this.session.send(err);
+        this.session.send(err.message);
       });
   }
 }

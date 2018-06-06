@@ -6,7 +6,13 @@ const client = new LIFX({
 
 /* Color Change Function */
 function setState(options) {
-  return client.setState('all', options);
+  return new Promise((resolve, reject) => {
+    client.setState('all', options).then(results => {
+      if (results.results[0].status === `offline`) {
+        reject({ message: `Burke's lamp is currently offline` });
+      } else resolve(results);
+    });
+  });
 }
 
 function listLights() {

@@ -28,7 +28,7 @@ class Color extends Intent {
           this.session.send(`OK. Lamp color is now ${options.color}.`);
         })
         .catch(err => {
-          this.session.send(err);
+          this.session.send(err.message);
         });
     } else {
       this.session.send(
