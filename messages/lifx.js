@@ -9,4 +9,8 @@ function setState(options) {
   return client.setState('all', options);
 }
 
-module.exports = { setState: setState };
+function listLights() {
+  return client.listLights('all').then(result => result);
+}
+
+module.exports = { setState: setState, listLights: listLights };
